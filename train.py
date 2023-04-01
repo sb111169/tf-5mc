@@ -292,4 +292,4 @@ model.fit(
     validation_steps=len(X_test) // batch_size
 )
 # ####save
-model.save('m1A-RGloVe-model1.h5')
+model.save('m5c-model1.h5')
