@@ -4,11 +4,25 @@ from tensorflow import keras as keras
 layers = keras.layers
 
 
+class PositionEmbedding(layers.Layer):
+    def __init__(self, sequence_length, output_dim, **kwargs):
+        super().__init__(**kwargs)
+        self.position_embeddings = layers.Embedding(input_dim=sequence_length, output_dim=output_dim)
+
+    def call(self, inputs):
+        length = tf.shape(inputs)[1]
+        positions = tf.range(start=0, limit=length, delta=1)
+        embedded_positions = self.position_embeddings(positions)
+        return inputs + embedded_positions
+
 def transformer_encoder(inputs, head_size, num_heads, ff_dim, dropout=0):
+    # Add Position Embedding
+    x = PositionEmbedding(sequence_length=inputs.shape[1], output_dim=inputs.shape[2])(inputs)
+
     # Attention and Normalization
     x = layers.MultiHeadAttention(
         key_dim=head_size, num_heads=num_heads, dropout=dropout
-    )(inputs, inputs)
+    )(x, x)
     x = layers.Dropout(dropout)(x)
     x = layers.LayerNormalization(epsilon=1e-6)(x)
     res = x + inputs
@@ -19,6 +33,7 @@ def transformer_encoder(inputs, head_size, num_heads, ff_dim, dropout=0):
     x = layers.Conv1D(filters=inputs.shape[-1], kernel_size=1)(x)
     x = layers.LayerNormalization(epsilon=1e-6)(x)
     return x + res
+
 
 
 def build_model(
